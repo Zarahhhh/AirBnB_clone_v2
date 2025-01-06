@@ -118,20 +118,31 @@ class HBNBCommand(cmd.Cmd):
             if not args:
                 raise SyntaxError()
             arg_list = args.split(" ")
+            if arg_list[0] not in HBNBCommand.classes:
+                raise NameError()
             kw = {}
             for arg in arg_list[1:]:
                 arg_splited = arg.split("=")
-                arg_splited[1] = eval(arg_splited[1])
+                try:
+                    arg_splited[1] = eval(arg_splited[1])
+                except Exception:
+                    continue
+
                 if type(arg_splited[1]) is str:
                     arg_splited[1] = arg_splited[1].replace("_", " ").replace('"', '\\"')
                 kw[arg_splited[0]] = arg_splited[1]
+
+        kw.setdefault('id', str(uuid.uuid4()))
+        kw.setdefault('created_at', datetime.now().isoformat())
+        kw.setdefault('updated_at', datetime.now().isoformat())
+
+        new_instance = HBNBCommand.classes[arg_list[0]](**kw)
+        new_instance.save()
+        print(new_instance.id)
         except SyntaxError:
             print("** class name missing **")
         except NameError:
             print("** class doesn't exist **")
-        new_instance = HBNBCommand.classes[arg_list[0]](**kw)
-        new_instance.save()
-        print(new_instance.id)
 
     def help_create(self):
         """ Help information for the create method """
@@ -277,7 +288,7 @@ class HBNBCommand(cmd.Cmd):
                 args.append(v)
         else:  # isolate args
             args = args[2]
-            if args and args[0] is '\"':  # check for quoted arg
+            if args and args[0] == '\"':  # check for quoted arg
                 second_quote = args.find('\"', 1)
                 att_name = args[1:second_quote]
                 args = args[second_quote + 1:]
