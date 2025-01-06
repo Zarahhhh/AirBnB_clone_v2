@@ -113,36 +113,30 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """ Create an object of any class"""
+        """Create an object of any class"""
         try:
             if not args:
-                raise SyntaxError()
+                print("** class name missing **")
+                return
             arg_list = args.split(" ")
             if arg_list[0] not in HBNBCommand.classes:
-                raise NameError()
+                print("** class doesn't exist **")
+                return
+
             kw = {}
             for arg in arg_list[1:]:
-                arg_splited = arg.split("=")
-                try:
-                    arg_splited[1] = eval(arg_splited[1])
-                except Exception:
-                    continue
+                key, value = arg.split("=")
+                value = eval(value)
+                if isinstance(value, str):
+                    value = value.replace("_", " ").replace('\\"', '"')
+                    kw[key] = value
 
-                if type(arg_splited[1]) is str:
-                    arg_splited[1] = arg_splited[1].replace("_", " ").replace('"', '\\"')
-                kw[arg_splited[0]] = arg_splited[1]
+                    new_instance = HBNBCommand.classes[arg_list[0]](**kw)
+                    new_instance.save()
+                    print(new_instance.id)
+        except Exception as e:
+            print(f"Error: {e}")
 
-        kw.setdefault('id', str(uuid.uuid4()))
-        kw.setdefault('created_at', datetime.now().isoformat())
-        kw.setdefault('updated_at', datetime.now().isoformat())
-
-        new_instance = HBNBCommand.classes[arg_list[0]](**kw)
-        new_instance.save()
-        print(new_instance.id)
-        except SyntaxError:
-            print("** class name missing **")
-        except NameError:
-            print("** class doesn't exist **")
 
     def help_create(self):
         """ Help information for the create method """
@@ -216,20 +210,18 @@ class HBNBCommand(cmd.Cmd):
         print("[Usage]: destroy <className> <objectId>\n")
 
     def do_all(self, args):
-        """ Shows all objects, or all objects of a class"""
-        print_list = []
-
+        """Prints all string representation of all instances"""
+        objects = []
         if args:
-            args = args.split(' ')[0]  # remove possible trailing args
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage.all(HBNBCommand.classes[args]).items():
-                print_list.append(str(v))
+            objects = [str(obj) for key, obj in storage.all().items() if key.startswith(args + ".")]
         else:
-            for k, v in storage.all().items():
-                print_list.append(str(v))
-        print(print_list)
+
+            objects = [str(obj) for obj in storage.all().values()]
+            print(objects)
+
 
     def help_all(self):
         """ Help information for the all command """
